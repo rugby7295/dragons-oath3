@@ -1,0 +1,121 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>ドラゴンズ・オース</title><meta name="theme-color" content="#0c0a07"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>"><style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(#2a1d10,#0c0a07) fixed;color:#e8dcc0;font-family:'Hiragino Mincho ProN','Yu Mincho',serif;min-height:100vh;padding:env(safe-area-inset-top) 8px env(safe-area-inset-bottom)}
+.w{max-width:720px;margin:auto}h1{color:#d4af6a;text-align:center;letter-spacing:.2em;text-shadow:0 0 12px #a60;margin:24px 0 4px}h3{color:#d4af6a;margin:10px 0 4px}
+button{background:#3a2a14;color:#f0dcaa;border:1px solid #d4af6a;border-radius:6px;padding:10px 14px;font:inherit;margin:3px;cursor:pointer}button:disabled{opacity:.4}
+input{background:#1a140c;color:#fff;border:1px solid #6a5530;border-radius:6px;padding:10px;font:inherit;width:100%;margin:4px 0}
+.c{text-align:center}.bar{height:8px;background:#400;border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:#c33}
+.pt{display:inline-block;min-width:104px;padding:6px;border:1px solid #6a5530;border-radius:6px;margin:2px;font-size:12px;vertical-align:top}
+.box{border:1px solid #6a5530;border-radius:8px;padding:10px;margin:8px 0;background:#1a140caa}
+.en{position:relative;display:inline-block;width:47%;padding:8px;border:2px solid #533;border-radius:8px;margin:1%;background:#2a1414;cursor:pointer;vertical-align:top}.en.boss{width:98%;border-color:#f84;box-shadow:0 0 14px #a30}.sel{border-color:#f55}
+.hand{display:flex;overflow-x:auto;gap:6px;padding:6px 0}.card{flex:0 0 98px;min-height:118px;border:2px solid #b89550;border-radius:8px;background:#2a2016;padding:6px;position:relative;font-size:13px;cursor:pointer;transition:transform .1s}.card:active{transform:scale(1.1)}
+.card.up{border-color:#fd6;box-shadow:0 0 8px #fa0}.card.x{border-color:#666;opacity:.5}.card i{position:absolute;top:2px;right:6px;color:#6cf;font-style:normal;font-weight:bold}.card small{display:block;margin-top:6px;color:#cba}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.sk{padding:8px;border:1px solid #6a5530;border-radius:6px;margin:4px 0}.sk.o{background:#3a5a2a}.sk.a{border-color:#fd6}
+.tag{color:#9ce;font-size:12px}.nm{color:#fd6}.log{font-size:13px;color:#dcb;min-height:60px}
+.hit{animation:hit .35s}@keyframes hit{0%{transform:translateX(-7px);background:#a33}100%{transform:none}}
+.dmg{position:absolute;left:40%;top:10px;color:#ff6;font-size:24px;font-weight:bold;animation:up 1s forwards;pointer-events:none}@keyframes up{to{transform:translateY(-44px);opacity:0}}
+body.fl{animation:fl .5s}@keyframes fl{0%{box-shadow:inset 0 0 110px #f00}100%{box-shadow:none}}
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;color:#f84;text-shadow:0 0 20px #f00;background:#000b;animation:ovf 2s forwards;pointer-events:none;z-index:9;text-align:center}@keyframes ovf{0%,75%{opacity:1}100%{opacity:0}}
+body[data-ch="0"]{background:radial-gradient(#1d2a14,#080c06) fixed}body[data-ch="1"]{background:radial-gradient(#14222c,#060a0e) fixed}body[data-ch="2"]{background:radial-gradient(#3a2a10,#0e0a04) fixed}body[data-ch="3"]{background:radial-gradient(#1a2a22,#060a08) fixed}body[data-ch="4"]{background:radial-gradient(#3a140c,#0e0403) fixed}.dot.gap{margin-right:10px}
+.hero{padding:30px 0 6px;animation:glow 4s ease-in-out infinite alternate}@keyframes glow{to{text-shadow:0 0 30px #f80}}.hero h1{font-size:2.1em}
+.big{width:100%;padding:14px;font-size:1.1em}.node{width:100%;text-align:left;padding:12px 14px;margin:5px 0}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#4a3a20;margin:3px}.dot.d{background:#d4af6a}.dot.n{background:#fff;box-shadow:0 0 8px #fff}.dot.g{border:2px solid #f84}.dot.boss{background:#a22;width:16px;height:16px}
+</style></head><body><div class="w" id="app"></div><script>
+let ws,S=null,I=null,scr='home',sel=0,msg='',prev={},cfg=Object.assign({bgm:1,vol:.5,se:1,sev:.6,fxon:1,fs:16},JSON.parse(localStorage.cfg||'{}'));
+const $=id=>document.getElementById(id),R=n=>Math.random()*n|0,esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o)),go=(t,o)=>send({t,...o}),save=()=>localStorage.cfg=JSON.stringify(cfg);
+const urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase();
+function conn(name,room){let ok=0;name=name.trim();localStorage.name=name;ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+  ws.onopen=()=>{const sv=JSON.parse(localStorage.sess||'null');send({t:'join',name,room,token:sv&&room&&sv.room===room&&sv.name===name?sv.token:null,prof:JSON.parse(localStorage['pf_'+name.toLowerCase()]||'null')})};
+  ws.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.t==='joined'){ok=1;conn.t=0;I=m.init;localStorage.sess=JSON.stringify({name,room:m.room,token:m.token});history.replaceState(0,'','?room='+m.room);scr='game';msg=''}
+    else if(m.t==='state'){S=m;localStorage['pf_'+m.me.name.toLowerCase()]=JSON.stringify(m.pr)}
+    else if(m.t==='err'){msg=m.m;scr='home';S=null;ws.onclose=null;localStorage.removeItem('sess')}
+    draw();fx();music()};
+  ws.onclose=()=>{if(S){msg='接続が切れました。再接続中…';draw();setTimeout(()=>conn(name,S.code),1500)}else if(!ok&&(conn.t=(conn.t||0)+1)<25){msg='サーバーを起こしています…(最大1分ほどかかります)';draw();setTimeout(()=>conn(name,room),3000)}}}
+// 音楽・効果音(WebAudio生成)
+let ac,mi;const SC=[0,3,5,7,10,12,15,17];
+function tone(f,d,t,g){if(!ac||!cfg.se||!cfg.sev)return;const o=ac.createOscillator(),v=ac.createGain();o.type=t;o.frequency.value=f;v.gain.setValueAtTime(g*cfg.sev*2,ac.currentTime);v.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.connect(v);v.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}
+const CT=['field','ice','desert','swamp','valley'];const TR={field:new Audio('/audio/field.mp3'),ice:new Audio('/audio/ice.mp3'),desert:new Audio('/audio/desert.mp3'),swamp:new Audio('/audio/swamp.mp3'),valley:new Audio('/audio/valley.mp3'),battle:new Audio('/audio/battle.mp3'),boss:new Audio('/audio/boss.mp3')};Object.values(TR).forEach(a=>{a.loop=true;a.preload='none'});let cur=null;
+function music(){const sc=S&&S.sc,want=sc&&sc.t==='battle'?(sc.boss?'boss':'battle'):CT[S&&S.phase==='run'&&S.me.cls!=null?S.me.ch:0];
+  if(!cfg.bgm){Object.values(TR).forEach(a=>a.pause());cur=null;return}
+  if(cur===want){TR[cur].volume=cfg.vol;return}
+  const o=cur&&TR[cur],n=TR[want];cur=want;n.volume=0;n.play().catch(()=>{cur=null});let v=0;
+  const iv=setInterval(()=>{v=Math.min(cfg.vol,v+.05);n.volume=v;if(o)o.volume=Math.max(0,o.volume-.05);if(v>=cfg.vol&&(!o||o.volume<=0)){clearInterval(iv);if(o)o.pause()}},100)}
+document.addEventListener('click',()=>{ac=ac||new AudioContext();ac.resume();music()},{once:true});
+// 派手なエフェクト(CSSのみ)
+function fx(){const sc=S&&S.sc;if(!sc||sc.t!=='battle'||!cfg.fxon){prev={};return}
+  sc.en.forEach((e,i)=>{const o=prev['e'+i],el=$('en'+i);if(o!=null&&el&&e.hp<o){el.classList.add('hit');const s=document.createElement('span');s.className='dmg';s.textContent='-'+(o-e.hp);el.appendChild(s);tone(120,.2,'sawtooth',.08)}prev['e'+i]=e.hp});
+  if(prev.hp!=null&&S.me.hp<prev.hp){document.body.classList.remove('fl');void document.body.offsetWidth;document.body.classList.add('fl');tone(80,.3,'square',.1)}prev.hp=S.me.hp;
+  if(sc.ph&&prev.ph&&sc.ph>prev.ph){const o=document.createElement('div');o.className='ov';o.innerHTML='第'+sc.ph+'相<br><small>'+(sc.ph===2?'竜が本気を出した':'竜が怒り狂う')+'</small>';document.body.appendChild(o);setTimeout(()=>o.remove(),2000);tone(55,1.5,'sawtooth',.15)}prev.ph=sc.ph}
+const cd=c=>[c.d&&`${c.d}ダメ`,c.aoe&&'全体',c.b&&`防御${c.b}`,c.h&&`回復${c.h}`,c.bn&&`燃焼${c.bn}`,c.wk&&'弱体',c.dr&&`${c.dr}枚引く`,c.mp&&`MP+${c.mp}`,c.pt&&'味方全員'].filter(x=>x).join(' ');
+const card=(id,ok,fn)=>{const c=I.cards[id];return`<div class="card ${id.endsWith('+')?'up':''} ${ok?'':'x'}" onclick="${fn}"><b>${c.n}</b><i>${c.c>9?'×':c.c}</i><small>${c.id==='x0'?'使えない呪い':cd(c)}</small></div>`};
+const bar=(a,b)=>`<div class="bar"><i style="width:${Math.max(0,a/b*100)}%"></i></div>`;
+const cn=c=>c==null?'未選択':I.cls[c].n;
+const itx=i=>`<span class="${i.nm?'nm':''}" title="${esc(i.lore||'')}">${i.n}(${I.lb[i.t]}+${i.v})</span>`;
+function draw(){document.body.style.fontSize=cfg.fs+'px';document.body.dataset.ch=S&&S.phase==='run'&&S.me.cls!=null?S.me.ch:'';
+  $('app').innerHTML=(msg?`<p class="c" style="color:#f88">${esc(msg)}</p>`:'')+(scr==='home'?home():scr==='set'?sets():scr==='help'?help():scr==='world'?world():!S?'<p class="c">接続中…</p>':scr==='sk'?skills():scr==='deck'?deck():S.phase==='lobby'?lobby():run())}
+const TITLES=['見習い冒険者','駆け出しの勇者','一人前の戦士','竜討ちの英雄','伝説の竜殺し'];
+function home(){const sv=JSON.parse(localStorage.sess||'null'),nm=localStorage.name||'',pf=JSON.parse(localStorage['pf_'+nm.toLowerCase()]||'null');
+return`<div class="hero"><h1>ドラゴンズ・オース</h1><p class="c tag">— 4人で挑む、カードと剣と竜の物語 —</p></div>
+${pf?`<div class="box c">冒険者 <b>${esc(nm)}</b> ・ ${TITLES[Math.min(4,pf.wins)]}<br><span class="tag">竜討伐 ${pf.wins}回 ・ スキルポイント ${pf.sp}</span></div>`:''}
+<div class="box"><input id="nm" maxlength="12" placeholder="プレイヤー名(同じ名前で成長データが引き継がれます)" value="${esc(nm)}">
+<button class="big" onclick="conn($('nm').value,'')">⚔ 新しい冒険を始める</button>
+<input id="rm" maxlength="4" placeholder="ルームコード(友達から聞いた4文字)" value="${urlRoom}" style="text-transform:uppercase">
+<button class="big" onclick="conn($('nm').value,$('rm').value.toUpperCase())">🤝 パーティーに参加する</button>
+${sv?`<button class="big" onclick="conn('${esc(sv.name)}','${sv.room}')">▶ 冒険を再開(${sv.room})</button>`:''}</div>
+<div class="c"><button onclick="scr='help';draw()">📖 遊び方</button><button onclick="scr='set';draw()">⚙ 設定</button></div>
+<p class="c tag">冒険は「旅立ち→竜討伐」で1回。終わったら何度でも新しい冒険へ。</p>`}
+function help(){return`<h1>遊び方</h1><div class="box"><h3>🎯 目的</h3><p>4人まで(1人でもOK)で旅に出て、道の先に待つ賢き邪竜ヴァルドラクスを倒すと1回の冒険が完了。倒したらまた新しい冒険へ。スキルポイントは次の冒険にも引き継がれます。</p>
+<h3>🗺 冒険の道</h3><p>全24マスの5章構成(森→山脈→砂漠→沼地→竜の谷)。毎マス、3つの道から選びます。<br>⚔戦闘 ❓出来事 🏕休息(回復/強化/カード削除) 🛒商店 💎宝 👹精鋭(強いが報酬が豪華)<br>各章の終わりには👑守護者がいます。道中は各自バラバラでも、まとまってもOK。</p>
+<h3>🃏 戦闘</h3><p>MPを使ってカードを出し、ターン終了で敵が動きます。敵の頭上に次の行動が出ます。職業の固有スキル✨は1戦闘1回・MP不要。</p>
+<h3>🐉 竜戦</h3><p>全員が道の終わりに着くと突入。竜は3つの相で変化し、眷属を呼び、弱った者を狙います。<br>⚡溜め攻撃は、そのターンに合計ダメージを与えて阻止。<br>🤝連携(1MP)を全員で押すと大ダメージ。💀終焉の詠唱は連携が揃うと打ち破れます。</p>
+<h3>🌱 成長</h3><p>戦闘に勝つとスキルポイントを獲得。スキルツリーと職業の秘伝で強くなれます。同じプレイヤー名で続きから遊べます。</p></div>
+<div class="c"><button onclick="scr=S?'game':'home';draw()">戻る</button></div>`}
+function sets(){return`<h1>設定</h1><div class="box"><h3>🔊 音</h3>
+<label><input type="checkbox" style="width:auto" ${cfg.bgm?'checked':''} onchange="cfg.bgm=this.checked?1:0;save();music()"> BGM</label>
+<p>BGM音量<input type="range" min="0" max="1" step=".1" value="${cfg.vol}" oninput="cfg.vol=+this.value;save();music()"></p>
+<label><input type="checkbox" style="width:auto" ${cfg.se?'checked':''} onchange="cfg.se=this.checked?1:0;save()"> 効果音</label>
+<p>効果音の音量<input type="range" min="0" max="1" step=".1" value="${cfg.sev}" oninput="cfg.sev=+this.value;save();tone(440,.15,'square',.08)"></p>
+<h3>✨ 表示</h3><label><input type="checkbox" style="width:auto" ${cfg.fxon?'checked':''} onchange="cfg.fxon=this.checked?1:0;save()"> 戦闘エフェクト(ダメージ表示・画面の揺れなど)</label>
+<p>文字の大きさ <button onclick="cfg.fs=14;save();draw()">小</button><button onclick="cfg.fs=16;save();draw()">中</button><button onclick="cfg.fs=19;save();draw()">大</button></p>
+<h3>👤 データ</h3><button onclick="if(confirm('この端末に保存した名前・設定・バックアップを消します。よろしいですか?')){localStorage.clear();location.href='/'}">この端末のデータを消す</button>
+${S?`<button onclick="if(confirm('冒険を離れてホームに戻ります')){localStorage.removeItem('sess');location.href='/'}">冒険を離れる(ホームへ)</button>`:''}</div>
+<div class="c"><button onclick="scr=S?'game':'home';draw()">戻る</button></div>`}
+function chap(sc){return`<div class="box c"><h1>第${sc.ch+1}章</h1><h3>${I.ch[sc.ch]}</h3><p>${I.cht[sc.ch]}</p><button class="big" onclick="go('next')">進む</button></div>`}
+function world(){const m=S.me,n=I.steps;return`<h1>世界地図</h1>${I.ch.map((c,i)=>{const en=i===4?n-1:i*5+4,stt=m.step>en?'踏破':m.ch===i?'現在地':'未踏';return`<div class="sk ${stt==='現在地'?'o':''}"><b>${i+1}. ${c}</b> <span class="tag">${stt}</span><br><small>${I.cht[i]}</small><br><small>${i<4?'👑守護者':'🐉ボス'}: ${I.gd[i]}</small></div>`}).join('')}<div class="c"><button onclick="scr='game';draw()">戻る</button></div>`}
+const ND={battle:['⚔','戦闘','敵と戦う'],event:['❓','出来事','何かが起きる'],rest:['🏕','休息','回復・強化・カード削除'],shop:['🛒','商店','買い物'],treasure:['💎','宝','宝が眠っている'],elite:['👹','精鋭','強敵。報酬が豪華']};
+function mapv(sc){const m=S.me,n=I.steps;let pr='';for(let i=0;i<n;i++)pr+=`<span class="dot ${i<m.step?'d':i===m.step?'n':''} ${i%5===4?'g gap':''}"></span>`;
+return`<div class="box"><h3>${I.ch[m.ch]}</h3><div class="c">${pr}<span class="dot boss"></span></div><p class="c tag">${m.step===n-1?'竜の巣の手前。最後の支度をしよう':'進む道を選ぼう'}</p>${sc.opts.map((o,i)=>`<button class="node" onclick="go('go',{i:${i}})"><span style="font-size:26px">${ND[o.k][0]}</span> <b>${ND[o.k][1]}</b> <small>${ND[o.k][2]}</small></button>`).join('')}</div>`}
+function shop(sc){const m=S.me;return`<div class="box"><h3>🛒 旅の商人</h3><p class="tag">所持金 ${m.gold}G</p>${sc.msg?`<p style="color:#fd8">${esc(sc.msg)}</p>`:''}
+${sc.goods.map((x,i)=>{const lb=x.k==='item'?'装備: '+itx(x.it):x.k==='card'?'カード: '+I.cards[x.id].n+' '+cd(I.cards[x.id]):x.k==='heal'?'薬(体力40%回復)':x.k==='remove'?'不要なカードを1枚外す':'カードを1枚強化する';
+return`<button style="width:100%;text-align:left" ${x.sold||m.gold<x.price?'disabled':''} onclick="go('buy',{i:${i}})">${x.sold?'売切 ':''}${lb} <b style="float:right">${x.price}G</b></button>`}).join('')}
+<button style="width:100%" onclick="go('leave')">店を出る</button></div>`}
+function party(){return S.party.map(p=>`<div class="pt" style="${p.me?'border-color:#d4af6a':''}${p.on?'':';opacity:.5'}"><b>${esc(p.n)}</b> <span class="tag">${cn(p.cls)}</span>${p.cls==null?'':bar(p.hp,p.mhp)+`HP ${p.hp}/${p.mhp} ・ ${p.step}/${I.steps}`}</div>`).join('')}
+function classes(){return`<div class="cg">${I.cls.map((c,i)=>`<button onclick="go('class',{c:${i}})" style="${S.me.cls===i?'background:#6a4a1a':''}"><b>${c.n}</b> <small>HP${c.hp}</small><br><small>✨${I.ult[i].n}:${cd(I.ult[i])}</small></button>`).join('')}</div>`}
+function lobby(){const all=S.party.every(p=>p.cls!=null);return`<h1>集いの間</h1><p class="c">ルームコード <b style="font-size:24px">${S.code}</b><br><button onclick="navigator.clipboard.writeText(location.href);this.textContent='コピーしました'">招待リンクをコピー</button></p>
+<div class="box">${party()}</div><h3>職業を選ぶ</h3>${classes()}
+<div class="c">${S.host?`<button ${all?'':'disabled'} onclick="go('start')">冒険に出発</button>`:'<p class="tag">ホストの出発を待っています…</p>'}<button onclick="scr='sk';draw()">スキルツリー(SP ${S.pr.sp})</button><button onclick="scr='set';draw()">⚙</button></div>`}
+function skills(){const o=S.pr.skills,nd=l=>l.map(t=>{const own=o.includes(t.id),av=!own&&S.pr.sp>0&&(!t.req||o.includes(t.req));return`<div class="sk ${own?'o':av?'a':''}"><b>${t.n}</b> <span class="tag">${I.lb[t.st]}+${t.v}</span> ${own?'✓':`<button ${av?'':'disabled'} onclick="go('skill',{id:'${t.id}'})">習得(1SP)</button>`}</div>`}).join('');
+return`<h1>スキルツリー</h1><p class="c">スキルポイント: <b>${S.pr.sp}</b> ・ 竜討伐 ${S.pr.wins}回</p>${['武','守','術'].map(b=>`<div class="box"><h3>${b}</h3>${nd(I.tree.filter(t=>t.br===b&&t.cls===undefined))}</div>`).join('')}
+${S.me.cls!=null?`<div class="box"><h3>${cn(S.me.cls)}の秘伝(この職業で遊ぶ時だけ有効)</h3>${nd(I.tree.filter(t=>t.cls===S.me.cls))}</div>`:'<p class="c tag">職業を選ぶと専用ツリーが表示されます</p>'}<div class="c"><button onclick="scr='game';draw()">戻る</button></div>`}
+function deck(){const m={};S.me.deck.forEach(c=>m[c]=(m[c]||0)+1);return`<h1>デッキ(${S.me.deck.length}枚)</h1><div class="hand" style="flex-wrap:wrap">${Object.keys(m).map(c=>`<div>${card(c,1,'')}<div class="c tag">×${m[c]}</div></div>`).join('')}</div><h3>持ち物</h3><p>${S.me.items.length?S.me.items.map(itx).join('<br>'):'なし'}</p><div class="c"><button onclick="scr='game';draw()">戻る</button></div>`}
+function run(){const m=S.me,sc=S.sc;let body='';
+  if(m.cls==null||!sc)body=`<h3>職業を選んで冒険に加わる</h3>${classes()}`;
+  else if(sc.t==='event')body=`<div class="box"><p>${esc(sc.ev.text)}</p>${sc.res?`<p style="color:#fd8">${esc(sc.res)}</p><button onclick="go('next')">${sc.nx?'その先へ…':'続ける'}</button>`:sc.ev.opts.map((o,i)=>`<button style="width:100%" onclick="go('choose',{i:${i}})">${o.l}</button>`).join('')}</div>`;
+  else if(sc.t==='chapter')body=chap(sc);else if(sc.t==='map')body=mapv(sc);else if(sc.t==='shop')body=shop(sc);else if(sc.t==='battle')body=battle(sc);
+  else if(sc.t==='reward')body=`<div class="box"><p>勝利! 金貨${sc.g}枚を得た。${sc.note?'<br><span class="nm">'+esc(sc.note)+'</span><br>':''}カードを1枚選ぼう。(金色の枠は強化版)</p><div class="hand">${sc.cards.map((c,i)=>card(c,1,`go('reward',{i:${i}})`)).join('')}</div><button onclick="go('reward',{i:-1})">選ばない</button></div>`;
+  else if(sc.t==='defeat')body=`<div class="box"><p>力尽きた…だが仲間の祈りで体力が全快した。(金貨半分を失った)</p><button onclick="go('next')">再び歩き出す</button></div>`;
+  else if(sc.t==='gather')body=`<div class="box"><h3>竜の巣の前</h3><p>${sc.lost?'竜に敗れ、退却した。態勢を整えて再挑戦しよう。':'仲間が揃えば、賢き邪竜ヴァルドラクスに挑む。先に進みたい者だけで挑むこともできる。'}</p>${S.host?`<button onclick="go('raid')">竜に挑む(集まった者だけで)</button>`:'<p class="tag">ホストが突入を決めます(全員揃うと自動突入)</p>'}</div>`;
+  else if(sc.t==='over')body=`<div class="box c"><h1>竜は倒れた</h1><p>第${S.runs}回目の冒険、完了!</p><p class="tag">金貨${sc.gold} ・ 装備${sc.items}個 ・ デッキ${sc.deck}枚 ・ スキルポイント+5</p>
+${S.host?`<button class="big" onclick="go('restart')">⚔ 同じ職業で新しい冒険へ</button><button onclick="go('again')">職業を変えて集いの間へ</button>`:'<p class="tag">ホストが次の冒険を始めるのを待っています…</p>'}<button onclick="scr='sk';draw()">スキルを強化(${S.pr.sp}SP)</button></div>`;
+  return`<div class="box">${party()}</div><div class="tag c">${esc(S.code)} ・ 金貨${m.gold} ・ ${cn(m.cls)} ・ デッキ${m.deck.length}枚 ・ ${I.ch[m.ch]} ${m.step}/${I.steps}</div>${body}
+<div class="c"><button onclick="scr='world';draw()">🗺 世界</button><button onclick="scr='deck';draw()">デッキ・持ち物</button><button onclick="scr='sk';draw()">スキル(${S.pr.sp}SP)</button><button onclick="scr='set';draw()">⚙</button></div>`}
+function battle(sc){const live=sc.en.map((e,i)=>e.hp>0?i:-1).filter(i=>i>=0);if(!live.includes(sel))sel=live[0]||0;
+  const ik=e=>({atk:`⚔${e.it.v}`,heavy:`💥${e.it.v}`,all:`🔥全体${e.it.v}`,weak:`🕸${e.it.v}+弱体`,guard:'🛡回復',summon:'👥眷属を呼ぶ',doom:`💀終焉の詠唱(全体${e.it.v}) 連携${sc.req}人以上で阻止(いま${sc.lk}人)`,charge:`⚡溜め(全体${e.it.v}) 阻止まであと${Math.max(0,(e.it.need||0)-sc.dt)}ダメージ`}[e.it.k]);
+  return`<h3>${sc.boss?'⚔ 竜との決戦(第'+sc.ph+'相) ⚔':sc.kind==='guard'?'👑 守護者':sc.kind==='elite'?'👹 精鋭':'戦闘'}</h3>${sc.en.map((e,i)=>`<div id="en${i}" class="en ${e.boss?'boss':''} ${i===sel?'sel':''}" style="${e.hp<=0?'opacity:.3':''}" onclick="sel=${i};draw()"><b>${e.n}</b>${bar(e.hp,e.mhp)}HP ${e.hp}/${e.mhp}<br>次: ${ik(e)} ${e.burn?'🔥'+e.burn:''}${e.weak?' 弱体':''}</div>`).join('')}
+<div class="box log">${sc.log.map(esc).join('<br>')||'&nbsp;'}</div>
+<div class="box">MP <b>${sc.mp}</b> ・ 防御 ${sc.blk} ・ 山札${sc.dr} 捨札${sc.ds}${sc.wk?' ・ 弱体中':''}${sc.allies?'<br>'+sc.allies.map(a=>`${esc(a.n)}${a.ended?'✔':'…'}`).join(' '):''}</div>
+${sc.dead?'<p class="c">戦闘不能。仲間の戦いを見守ろう…</p>':`<div class="hand">${sc.hand.map((c,i)=>card(c,I.cards[c].c<=sc.mp&&!sc.ended,`play(${i})`)).join('')}</div><div class="c"><button ${sc.ult.used||sc.ended?'disabled':''} onclick="tone(600,.3,'sine',.1);go('ult',{g:sel})">✨${sc.ult.n}(${cd(I.ult[S.me.cls])})</button>${sc.boss?`<button ${sc.ended||sc.lkd||sc.mp<1?'disabled':''} onclick="tone(440,.3,'triangle',.1);go('link')">🤝連携(1MP) ${sc.lk}人</button>`:''}<button ${sc.ended?'disabled':''} onclick="go('end')">${sc.ended?'仲間を待っています…':'ターン終了'}</button></div>`}`}
+function play(i){tone(300+R(300),.15,'square',.05);go('play',{i,g:sel})}
+draw();
+</script></body></html>
