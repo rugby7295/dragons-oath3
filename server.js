@@ -1,7 +1,7 @@
 const http=require('http'),fs=require('fs'),path=require('path'),zlib=require('zlib');
 let WebSocketServer;try{({WebSocketServer}=require('ws'))}catch{({WebSocketServer}=require('./miniws'))}
 const G=require('./game');
-const PUB=path.join(__dirname,'public'),DATA=process.env.DATA_FILE||path.join(__dirname,'data.json');
+const PUB=__dirname,DATA=process.env.DATA_FILE||path.join(__dirname,'data.json');
 // 永続化: Upstash Redis(環境変数があれば) → なければ data.json
 const UU=process.env.UPSTASH_REDIS_REST_URL,UT=process.env.UPSTASH_REDIS_REST_TOKEN,KEY='dragons-oath-db';
 const rc=async cmd=>(await(await fetch(UU,{method:'POST',headers:{Authorization:'Bearer '+UT},body:JSON.stringify(cmd)})).json()).result;
